@@ -6,20 +6,22 @@ End to End Idea:
 
 1.  Insert / upload a dataset
 Uploading CSV file into react or streamlit frontend
-C# backend to process the data and create a dataset record
 
 2. MapReduce aggregation: 
 
 Possibly start with C first. 
-C# backend reads data in chunks 
+Hold a library of possible aggregations. 
 Worker tasks parse -> filter -> group then aggregate
+Press run suggested reductions via streamlit. 
+System runs each job (system aggregator) producing multuple aggregate CSV
+
+Multiple levels (if user_id) suggest group by user_id
+If there exists an amount then suggest sum, avg, max. 
+Number of jobs may be capped. 
 
 3. ML/AI analysis in python
-C# sends the aggregated data to python for ML/AI analysis
+C sends the aggregated data to python for ML/AI analysis. Which can be run on multiple batches (auto metrics generation for dataset)
 
-Python computes features (optional)
-RUNS ML (Data analysis, clustering, classification, etc.)
-Python returns the results to C#
 
 4. React frontend displays the results
 

@@ -1,40 +1,41 @@
-Dockerfile
+Notes: Reducer - AI analytical database storage tool
 
-# Dockerfile
-FROM python:3.11-slim
+Upload datasets in CSV format, Give them names, have them uploaded Cloud storage.
+MapReduce framework is used for reducing the data and allowing for batch reductions
+On site you can choose individual columns to aggregate and run reductions.
 
-# Prevents python from writing .pyc files and buffers logs nicely
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+precomputed metric tables
+ML insights (clusters/anomalies)
+interactive dashboards + visualizations
+optional: LLM-assisted querying over the aggregated tables (safe mode)
 
-# System deps:
-# - build-essential: gcc, g++, make (to compile C)
-# - (optional) git, curl for debugging
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    make \
-    && rm -rf /var/lib/apt/lists/*
+“mini warehouse + metrics generator + ML dashboard.”
 
-# Set working directory inside container
-WORKDIR /app
+pipeline-ai-dashboard/
+├─ streamlit_app/app.py
+├─ c_aggregator/ (C code + Makefile + bin/aggregator)
+├─ python_ml/ (analysis scripts)
+├─ jobs/ (generated job configs per dataset)
+├─ data/
+│  ├─ raw/
+│  ├─ agg/
+│  └─ results/
+├─ metadata/
+│  └─ pipeline.db
+├─ scripts/
+│  ├─ generate_sample_data.py
+│  └─ run_local.sh
+├─ Dockerfile
+└─ .github/workflows/ci.yml
 
-# Copy and install python dependencies first (better caching)
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+Workflow: 
+1. A user can login, have all of their cloud stored datasets that are uploaded ready to go.
+2. "Smart" reductions suggestions. Saved as job configs in JSON where they can be run in a MapReduce framework. -> Either this or we can simply use SQLite where we run queries for
+reductions and save the tables. 
+3. Streamlit calls your C aggregator:
+reads the raw CSV filters/group-bys/aggregates (MapReduce pattern, multi-threaded) writes an aggregate CSV: data/agg/<dataset_id>/<job_name>.csv Then Python loads each aggregate CSV into SQLite tables for fast querying.
+4. ML Insights (Run ML) clustering/k-means with anamoly detection.
+5. Interactive dashboards + visualizations.
 
-# Copy the rest of the repository
-COPY . /app
-
-# Build the C aggregator
-# Assumes: c_aggregator/Makefile builds bin/aggregator
-RUN make -C c_aggregator
-
-# Streamlit default port
-EXPOSE 8501
-
-# Streamlit needs these for container environments
-ENV STREAMLIT_SERVER_PORT=8501
-ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
-
-# Run Streamlit app
-CMD ["streamlit", "run", "streamlit_app/app.py"]
+I was thinking about for the MVP
+we have a streamlit frontend where I can store the database in 2 different ways CSV and SQLite, then have a run queries (Smart) for smart aggregations, and then have Visualizations like K means clustering and other things run for visualization provided, then have ML run queries where you can prompt an LLM to query where the LLM would have access to the reduced databases (easier for the ML to handle) and then run some of its suggested queries to get results, or the user can ask in english for a query to run
